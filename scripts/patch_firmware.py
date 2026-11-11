@@ -74,20 +74,28 @@ print("Patched SX1280 packet TX and continuous-wave TX.")
 # ESP32-BLE-Gamepad 0.7.5 pulls NimBLE-Arduino 1.4.1 transitively.
 # Gamepad 0.8.0 declares NimBLE-Arduino ^2.5.1, avoiding two copies of
 # the same library being linked into the firmware.
-target_config = Path("ExpressLRS/src/targets/esp32-tx.ini")
+# ExpressLRS 3.4.2 keeps shared ESP32 library dependencies in
+# targets/common.ini (there is no targets/esp32-tx.ini in this release).
+target_config = Path("ExpressLRS/src/targets/common.ini")
 if not target_config.is_file():
     raise SystemExit(f"Expected target config not found: {target_config}")
 
 config_text = target_config.read_text(encoding="utf-8")
-pattern = re.compile(
-    r"(?im)^([ \t]*[^\r\n]*ESP32-BLE-Gamepad[ \t]*@[ \t]*)0\.7\.5([ \t]*)$"
-)
-config_text, replacements = pattern.subn(r"\g<1>0.8.0\g<2>", config_text)
-if replacements != 1:
-    raise SystemExit(
-        "Expected exactly one ESP32-BLE-Gamepad @ 0.7.5 dependency "
-        f"in {target_config}, found {replacements}; refusing an unsafe edit."
-    )
 
+def replace_dependency(name: str, old_version: str, new_version: str) -> None:
+    global config_text
+    pattern = re.compile(
+        rf"(?im)^([ \\t]*[^\\r\\n]*{re.escape(name)}[ \\t]*@[ \\t]*)"
+        rf"{re.escape(old_version)}([ \\t]*(?:#.*)?)$"
+    )
+    config_text, count = pattern.subn(r"\\g<1>" + new_version + r"\\g<2>", config_text)
+    if count != 1:
+        raise SystemExit(
+            f"Expected exactly one {name} @ {old_version} dependency "
+            f"in {target_config}, found {count}; refusing an unsafe edit."
+        )
+
+replace_dependency("ESP32-BLE-Gamepad", "0.5.2", "0.8.0")
+replace_dependency("NimBLE-Arduino", "1.4.1", "2.5.1")
 target_config.write_text(config_text, encoding="utf-8")
-print("Updated ESP32-BLE-Gamepad to 0.8.0 to use the existing NimBLE-Arduino 2.5.1 dependency.")
+print("Updated ESP32-BLE-Gamepad to 0.8.0 and NimBLE-Arduino to 2.5.1 in targets/common.ini.")
