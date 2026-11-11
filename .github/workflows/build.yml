@@ -1,0 +1,52 @@
+name: Build RF-disabled ExpressLRS firmware
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out this project
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check out ExpressLRS 3.4.2
+        run: |
+          git clone --recurse-submodules --depth 1 --branch 3.4.2 https://github.com/ExpressLRS/ExpressLRS.git ExpressLRS
+
+      - name: Apply RF-disable patch
+        run: python scripts/patch_firmware.py
+
+      - name: Install PlatformIO
+        run: python -m pip install --upgrade platformio
+
+      - name: Build DIY Mini ESP32 SX1280 2.4 GHz TX
+        run: pio run -d ExpressLRS/src -e Unified_ESP32_2400_TX_via_UART
+
+      - name: Prepare firmware artifact
+        run: |
+          mkdir -p release
+          cp ExpressLRS/src/.pio/build/Unified_ESP32_2400_TX_via_UART/firmware.bin release/GEPRC-Tiny-RF-Disable-ELRS-3.4.2.bin
+          cp hardware.json release/hardware.json.backup
+          cp README.md release/README.txt
+          cd release
+          zip -9 GEPRC-Tiny-RF-Disable-ELRS-3.4.2.zip *
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GEPRC-Tiny-RF-Disable-ELRS-3.4.2
+          path: release/GEPRC-Tiny-RF-Disable-ELRS-3.4.2.zip
+          if-no-files-found: error
+          retention-days: 30
