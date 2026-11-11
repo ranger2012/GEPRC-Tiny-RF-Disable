@@ -85,10 +85,10 @@ config_text = target_config.read_text(encoding="utf-8")
 def replace_dependency(name: str, old_version: str, new_version: str) -> None:
     global config_text
     pattern = re.compile(
-        rf"(?im)^([ \\t]*[^\\r\\n]*{re.escape(name)}[ \\t]*@[ \\t]*)"
-        rf"{re.escape(old_version)}([ \\t]*(?:#.*)?)$"
+        rf"(?im)^([ \t]*[^\r\n]*{re.escape(name)}[ \t]*@[ \t]*)"
+        rf"{re.escape(old_version)}([ \t]*(?:#.*)?)$"
     )
-    config_text, count = pattern.subn(r"\\g<1>" + new_version + r"\\g<2>", config_text)
+    config_text, count = pattern.subn(r"\g<1>" + new_version + r"\\g<2>", config_text)
     if count != 1:
         raise SystemExit(
             f"Expected exactly one {name} @ {old_version} dependency "
