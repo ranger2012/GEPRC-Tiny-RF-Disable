@@ -70,10 +70,6 @@ replace_function(
 source.write_text(text, encoding="utf-8")
 print("Patched SX1280 packet TX and continuous-wave TX.")
 
-# ExpressLRS 3.4.2 pulls NimBLE-Arduino 2.5.1 directly, while its pinned
-# ESP32-BLE-Gamepad 0.7.5 pulls NimBLE-Arduino 1.4.1 transitively.
-# Gamepad 0.8.0 declares NimBLE-Arduino ^2.5.1, avoiding two copies of
-# the same library being linked into the firmware.
 # ExpressLRS 3.4.2 keeps shared ESP32 library dependencies in
 # targets/common.ini (there is no targets/esp32-tx.ini in this release).
 target_config = Path("ExpressLRS/src/targets/common.ini")
@@ -88,7 +84,7 @@ def replace_dependency(name: str, old_version: str, new_version: str) -> None:
         rf"(?im)^([ \t]*[^\r\n]*{re.escape(name)}[ \t]*@[ \t]*)"
         rf"{re.escape(old_version)}([ \t]*(?:#.*)?)$"
     )
-    config_text, count = pattern.subn(r"\g<1>" + new_version + r"\\g<2>", config_text)
+    config_text, count = pattern.subn(r"\g<1>" + new_version + r"\g<2>", config_text)
     if count != 1:
         raise SystemExit(
             f"Expected exactly one {name} @ {old_version} dependency "
