@@ -62,6 +62,7 @@ replace_function(
         return;
     }
     RFAMP.TXRXdisable();
+    instance->SetMode(fallBackMode, SX12XX_Radio_All);
     TXnbISR();"""
 )
 
